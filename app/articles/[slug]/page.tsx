@@ -4,6 +4,8 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
+import fs from 'fs/promises'
+import path from 'path'
 
 interface ArticlePageProps {
   params: {
@@ -12,13 +14,23 @@ interface ArticlePageProps {
 }
 
 async function getArticleContent(slug: string) {
+  const filePath = path.join(process.cwd(), 'public/articles', `${slug}.md`)
   try {
-    const response = await fetch(`/articles/${slug}.md`)
-    if (!response.ok) return null
-    return await response.text()
+    return await fs.readFile(filePath, 'utf8')
   } catch (error) {
     return null
   }
+}
+
+export async function generateStaticParams() {
+  const articlesDirectory = path.join(process.cwd(), 'public/articles')
+  const files = await fs.readdir(articlesDirectory)
+  
+  return files
+    .filter(file => file.endsWith('.md'))
+    .map(file => ({
+      slug: file.replace(/\.md$/, ''),
+    }))
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
@@ -64,3 +76,4 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     </div>
   )
 }
+
